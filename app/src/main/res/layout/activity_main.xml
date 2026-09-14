@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/subtitle"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/deviceText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="6dp" />
+
+        <Button
+            android:id="@+id/scanButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/scan"
+            android:layout_marginTop="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BOTÕES"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="24dp" />
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="4"
+            android:rowCount="4"
+            android:useDefaultMargins="true">
+
+            <TextView android:id="@+id/btnTriangle" style="@style/DiagButton" android:text="△ TRIÂNGULO" />
+            <TextView android:id="@+id/btnCircle" style="@style/DiagButton" android:text="○ CÍRCULO" />
+            <TextView android:id="@+id/btnX" style="@style/DiagButton" android:text="✕ X" />
+            <TextView android:id="@+id/btnSquare" style="@style/DiagButton" android:text="□ QUADRADO" />
+
+            <TextView android:id="@+id/btnL1" style="@style/DiagButton" android:text="L1" />
+            <TextView android:id="@+id/btnR1" style="@style/DiagButton" android:text="R1" />
+            <TextView android:id="@+id/btnL2" style="@style/DiagButton" android:text="L2" />
+            <TextView android:id="@+id/btnR2" style="@style/DiagButton" android:text="R2" />
+
+            <TextView android:id="@+id/btnL3" style="@style/DiagButton" android:text="L3" />
+            <TextView android:id="@+id/btnR3" style="@style/DiagButton" android:text="R3" />
+            <TextView android:id="@+id/btnOptions" style="@style/DiagButton" android:text="OPTIONS" />
+            <TextView android:id="@+id/btnShare" style="@style/DiagButton" android:text="SHARE" />
+        </GridLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="D-PAD"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="3"
+            android:rowCount="3"
+            android:alignmentMode="alignMargins">
+
+            <Space android:layout_width="0dp" android:layout_height="48dp" android:layout_columnSpan="1" />
+            <TextView android:id="@+id/dpadUp" style="@style/DiagButton" android:text="↑" />
+            <Space android:layout_width="0dp" android:layout_height="48dp" />
+
+            <TextView android:id="@+id/dpadLeft" style="@style/DiagButton" android:text="←" />
+            <TextView android:id="@+id/dpadCenter" style="@style/DiagButton" android:text="•" />
+            <TextView android:id="@+id/dpadRight" style="@style/DiagButton" android:text="→" />
+
+            <Space android:layout_width="0dp" android:layout_height="48dp" />
+            <TextView android:id="@+id/dpadDown" style="@style/DiagButton" android:text="↓" />
+            <Space android:layout_width="0dp" android:layout_height="48dp" />
+        </GridLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ANALÓGICOS"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/lxValue"
+            style="@style/ValueText"
+            android:text="0.000" />
+
+        <TextView
+            android:id="@+id/lyValue"
+            style="@style/ValueText"
+            android:text="0.000" />
+
+        <TextView
+            android:id="@+id/rxValue"
+            style="@style/ValueText"
+            android:text="0.000" />
+
+        <TextView
+            android:id="@+id/ryValue"
+            style="@style/ValueText"
+            android:text="0.000" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GATILHOS"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/l2Value"
+            style="@style/ValueText"
+            android:text="0%" />
+
+        <ProgressBar
+            android:id="@+id/l2Bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/r2Value"
+            style="@style/ValueText"
+            android:text="0%" />
+
+        <ProgressBar
+            android:id="@+id/r2Bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/lastEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Último evento: —"
+            android:textSize="15sp"
+            android:layout_marginTop="20dp" />
+
+        <com.daniell.controller.StickView
+            android:id="@+id/lStick"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+
+        <com.daniell.controller.StickView
+            android:id="@+id/rStick"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>
