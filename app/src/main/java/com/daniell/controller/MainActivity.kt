@@ -47,7 +47,10 @@ class MainActivity : Activity() {
         refreshDevices()
     }
 
-    override fun onResume() { super.onResume(); refreshDevices() }
+    override fun onResume() {
+        super.onResume()
+        refreshDevices()
+    }
 
     private fun isController(d: InputDevice): Boolean {
         return (d.sources and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD ||
@@ -55,14 +58,21 @@ class MainActivity : Activity() {
     }
 
     private fun refreshDevices() {
-        val d = InputDevice.getDeviceIds().mapNotNull { InputDevice.getDevice(it) }
-            .firstOrNull(::isController)
-        if (d == null) {
+        var found: InputDevice? = null
+        for (id in InputDevice.getDeviceIds()) {
+            val device = InputDevice.getDevice(id)
+            if (device != null && isController(device)) {
+                found = device
+                break
+            }
+        }
+
+        if (found == null) {
             statusText.text = "Nenhum controle físico detectado"
             deviceText.text = "Conecte o DualSense e pressione algum botão."
         } else {
-            statusText.text = "Controle detectado: ${d.name}"
-            updateDevice(d)
+            statusText.text = "Controle detectado: ${found.name}"
+            updateDevice(found)
         }
     }
 
