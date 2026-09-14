@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_label">daniell's controller</string>
+    <string name="daniell_controller_app_name">daniell's controller</string>
 </resources>
