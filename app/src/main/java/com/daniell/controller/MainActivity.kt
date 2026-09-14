@@ -22,6 +22,7 @@ class MainActivity : Activity() {
     private lateinit var logText: TextView
 
     private val pressed = linkedSetOf<String>()
+    private val hatPressed = linkedSetOf<String>()
     private val logLines = ArrayDeque<String>()
     private var lx = 0f
     private var ly = 0f
@@ -84,12 +85,18 @@ class MainActivity : Activity() {
                 KeyEvent.ACTION_DOWN -> pressed.add(name)
                 KeyEvent.ACTION_UP -> pressed.remove(name)
             }
-            eventText.text = "KEY ${actionName(e.action)} code=${e.keyCode} " +
-                    "${KeyEvent.keyCodeToString(e.keyCode)} src=0x${e.source.toString(16)} dev=${e.deviceId}"
-            addLog("KEY ${actionName(e.action)} code=${e.keyCode} name=$name src=0x${e.source.toString(16)}")
+
+            // Android can repeat ACTION_DOWN while a button is held.
+            // Keep the pressed state, but don't treat the repeats as new presses in the log.
+            val isRepeat = e.action == KeyEvent.ACTION_DOWN && e.repeatCount > 0
+            if (!isRepeat) {
+                eventText.text = "KEY ${actionName(e.action)} code=${e.keyCode} " +
+                        "${KeyEvent.keyCodeToString(e.keyCode)} src=0x${e.source.toString(16)} dev=${e.deviceId}"
+                addLog("KEY ${actionName(e.action)} code=${e.keyCode} name=$name src=0x${e.source.toString(16)}")
+            }
+
             updateDevice(d)
-            buttonsText.text = "BOTÕES PRESSIONADOS\n" +
-                    if (pressed.isEmpty()) "Nenhum" else pressed.joinToString("  •  ")
+            updateButtonsText()
             return true
         }
         return super.dispatchKeyEvent(e)
@@ -112,11 +119,47 @@ class MainActivity : Activity() {
             rightStickText.text = "RX ${f(rx)}\nRY ${f(ry)}"
             triggersText.text = "L2 ${f(l2)}    R2 ${f(r2)}"
             rawAxes(e, d)
+            updateHatDpad(e, d)
             updateDevice(d)
             eventText.text = "MOTION action=${e.action} src=0x${e.source.toString(16)} dev=${d.id}"
             return true
         }
         return super.dispatchGenericMotionEvent(e)
+    }
+
+    private fun updateHatDpad(e: MotionEvent, d: InputDevice) {
+        if (d.getMotionRange(MotionEvent.AXIS_HAT_X, e.source) == null &&
+            d.getMotionRange(MotionEvent.AXIS_HAT_Y, e.source) == null) return
+
+        val newHat = linkedSetOf<String>()
+        val hatX = e.getAxisValue(MotionEvent.AXIS_HAT_X)
+        val hatY = e.getAxisValue(MotionEvent.AXIS_HAT_Y)
+
+        if (hatX < -0.5f) newHat.add("D-pad ←")
+        if (hatX > 0.5f) newHat.add("D-pad →")
+        if (hatY < -0.5f) newHat.add("D-pad ↑")
+        if (hatY > 0.5f) newHat.add("D-pad ↓")
+
+        if (newHat != hatPressed) {
+            val old = hatPressed.toSet()
+            hatPressed.clear()
+            hatPressed.addAll(newHat)
+            updateButtonsText()
+
+            val pressedNow = newHat.joinToString(" ").ifEmpty { "nenhum" }
+            val released = old - newHat
+            if (newHat.isNotEmpty()) {
+                addLog("HAT D-pad: $pressedNow")
+            } else if (released.isNotEmpty()) {
+                addLog("HAT D-pad: soltou")
+            }
+        }
+    }
+
+    private fun updateButtonsText() {
+        val all = (pressed + hatPressed).distinct()
+        buttonsText.text = "BOTÕES PRESSIONADOS\n" +
+                if (all.isEmpty()) "Nenhum" else all.joinToString("  •  ")
     }
 
     private fun centered(e: MotionEvent, d: InputDevice, axis: Int): Float {
