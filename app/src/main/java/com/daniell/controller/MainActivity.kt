@@ -51,7 +51,7 @@ class MainActivity : Activity() {
 
     private fun isController(d: InputDevice): Boolean {
         return (d.sources and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD ||
-               (d.sources and InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK
+                (d.sources and InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK
     }
 
     private fun refreshDevices() {
@@ -78,8 +78,7 @@ class MainActivity : Activity() {
                     "${KeyEvent.keyCodeToString(e.keyCode)} src=0x${e.source.toString(16)} dev=${e.deviceId}"
             addLog("KEY ${actionName(e.action)} code=${e.keyCode} name=$name src=0x${e.source.toString(16)}")
             updateDevice(d)
-            buttonsText.text = "BOTÕES PRESSIONADOS
-" +
+            buttonsText.text = "BOTÕES PRESSIONADOS\n" +
                     if (pressed.isEmpty()) "Nenhum" else pressed.joinToString("  •  ")
             return true
         }
@@ -99,10 +98,8 @@ class MainActivity : Activity() {
 
             leftStick.setPosition(lx, ly)
             rightStick.setPosition(rx, ry)
-            leftStickText.text = "LX ${f(lx)}
-LY ${f(ly)}"
-            rightStickText.text = "RX ${f(rx)}
-RY ${f(ry)}"
+            leftStickText.text = "LX ${f(lx)}\nLY ${f(ly)}"
+            rightStickText.text = "RX ${f(rx)}\nRY ${f(ry)}"
             triggersText.text = "L2 ${f(l2)}    R2 ${f(r2)}"
             rawAxes(e, d)
             updateDevice(d)
@@ -114,19 +111,20 @@ RY ${f(ry)}"
 
     private fun centered(e: MotionEvent, d: InputDevice, axis: Int): Float {
         val r = d.getMotionRange(axis, e.source) ?: return 0f
-        return ((e.getAxisValue(axis)-r.min)/(r.max-r.min)*2f-1f).coerceIn(-1f,1f)
+        return ((e.getAxisValue(axis) - r.min) / (r.max - r.min) * 2f - 1f).coerceIn(-1f, 1f)
     }
 
     private fun firstAxis(e: MotionEvent, d: InputDevice, a: Int, b: Int): Float {
-        return if (d.getMotionRange(a, e.source) != null) centered(e,d,a)
-        else if (d.getMotionRange(b, e.source) != null) centered(e,d,b) else 0f
+        return if (d.getMotionRange(a, e.source) != null) centered(e, d, a)
+        else if (d.getMotionRange(b, e.source) != null) centered(e, d, b) else 0f
     }
 
     private fun trigger(e: MotionEvent, d: InputDevice, a: Int, b: Int): Float {
-        val axis = if (d.getMotionRange(a,e.source) != null) a else if (d.getMotionRange(b,e.source)!=null) b else -1
+        val axis = if (d.getMotionRange(a, e.source) != null) a
+        else if (d.getMotionRange(b, e.source) != null) b else -1
         if (axis < 0) return 0f
-        val r = d.getMotionRange(axis,e.source)!!
-        return ((e.getAxisValue(axis)-r.min)/(r.max-r.min)).coerceIn(0f,1f)
+        val r = d.getMotionRange(axis, e.source)!!
+        return ((e.getAxisValue(axis) - r.min) / (r.max - r.min)).coerceIn(0f, 1f)
     }
 
     private fun rawAxes(e: MotionEvent, d: InputDevice) {
@@ -139,57 +137,56 @@ RY ${f(ry)}"
             MotionEvent.AXIS_HAT_X to "HAT_X", MotionEvent.AXIS_HAT_Y to "HAT_Y"
         )
         rawAxesText.text = buildString {
-            append("EIXOS DISPONÍVEIS / RAW
-")
-            for ((id,n) in axes) {
-                val r=d.getMotionRange(id,e.source)
-                if(r!=null) append(String.format(Locale.US,
-                    "%-9s id=%-2d raw=% .4f min=% .2f max=% .2f flat=% .3f
-",
-                    n,id,e.getAxisValue(id),r.min,r.max,r.flat))
+            append("EIXOS DISPONÍVEIS / RAW\n")
+            for ((id, n) in axes) {
+                val r = d.getMotionRange(id, e.source)
+                if (r != null) append(String.format(Locale.US,
+                    "%-9s id=%-2d raw=% .4f min=% .2f max=% .2f flat=% .3f\n",
+                    n, id, e.getAxisValue(id), r.min, r.max, r.flat))
             }
         }
     }
 
     private fun updateDevice(d: InputDevice) {
-        deviceText.text = "DISPOSITIVO
-Nome: ${d.name}
-ID: ${d.id}
-" +
-                "Vendor ID: ${d.vendorId}
-Product ID: ${d.productId}
-" +
-                "Sources: 0x${String.format("%08X",d.sources)}
-Descriptor: ${d.descriptor ?: "n/d"}"
+        deviceText.text = "DISPOSITIVO\nNome: ${d.name}\nID: ${d.id}\n" +
+                "Vendor ID: ${d.vendorId}\nProduct ID: ${d.productId}\n" +
+                "Sources: 0x${String.format("%08X", d.sources)}\nDescriptor: ${d.descriptor ?: "n/d"}"
     }
 
-    private fun addLog(s:String) {
-        if(logLines.size>=12) logLines.removeFirst()
+    private fun addLog(s: String) {
+        if (logLines.size >= 12) logLines.removeFirst()
         logLines.addLast(s)
-        logText.text="LOG DE EVENTOS
-"+logLines.joinToString("\n")
+        logText.text = "LOG DE EVENTOS\n" + logLines.joinToString("\n")
     }
 
-    private fun keyName(c:Int)=when(c) {
+    private fun keyName(c: Int) = when (c) {
         KeyEvent.KEYCODE_BUTTON_A -> "A / X"
         KeyEvent.KEYCODE_BUTTON_B -> "B / Círculo"
         KeyEvent.KEYCODE_BUTTON_X -> "X / Quadrado"
         KeyEvent.KEYCODE_BUTTON_Y -> "Y / Triângulo"
-        KeyEvent.KEYCODE_BUTTON_L1 -> "L1"; KeyEvent.KEYCODE_BUTTON_R1 -> "R1"
-        KeyEvent.KEYCODE_BUTTON_L2 -> "L2"; KeyEvent.KEYCODE_BUTTON_R2 -> "R2"
-        KeyEvent.KEYCODE_BUTTON_THUMBL -> "L3"; KeyEvent.KEYCODE_BUTTON_THUMBR -> "R3"
+        KeyEvent.KEYCODE_BUTTON_L1 -> "L1"
+        KeyEvent.KEYCODE_BUTTON_R1 -> "R1"
+        KeyEvent.KEYCODE_BUTTON_L2 -> "L2"
+        KeyEvent.KEYCODE_BUTTON_R2 -> "R2"
+        KeyEvent.KEYCODE_BUTTON_THUMBL -> "L3"
+        KeyEvent.KEYCODE_BUTTON_THUMBR -> "R3"
         KeyEvent.KEYCODE_BUTTON_START -> "Options / Start"
         KeyEvent.KEYCODE_BUTTON_SELECT -> "Share / Select"
-        KeyEvent.KEYCODE_DPAD_UP -> "D-pad ↑"; KeyEvent.KEYCODE_DPAD_DOWN -> "D-pad ↓"
-        KeyEvent.KEYCODE_DPAD_LEFT -> "D-pad ←"; KeyEvent.KEYCODE_DPAD_RIGHT -> "D-pad →"
+        KeyEvent.KEYCODE_DPAD_UP -> "D-pad ↑"
+        KeyEvent.KEYCODE_DPAD_DOWN -> "D-pad ↓"
+        KeyEvent.KEYCODE_DPAD_LEFT -> "D-pad ←"
+        KeyEvent.KEYCODE_DPAD_RIGHT -> "D-pad →"
         KeyEvent.KEYCODE_DPAD_CENTER -> "D-pad Center"
         KeyEvent.KEYCODE_BUTTON_MODE -> "PS / Mode"
         else -> KeyEvent.keyCodeToString(c)
     }
 
-    private fun actionName(a:Int)=when(a) {
-        KeyEvent.ACTION_DOWN->"DOWN"; KeyEvent.ACTION_UP->"UP"
-        KeyEvent.ACTION_MULTIPLE->"MULTIPLE"; else->a.toString()
+    private fun actionName(a: Int) = when (a) {
+        KeyEvent.ACTION_DOWN -> "DOWN"
+        KeyEvent.ACTION_UP -> "UP"
+        KeyEvent.ACTION_MULTIPLE -> "MULTIPLE"
+        else -> a.toString()
     }
-    private fun f(v:Float)=String.format(Locale.US,"% .3f",v)
+
+    private fun f(v: Float) = String.format(Locale.US, "% .3f", v)
 }
