@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import java.util.Locale
 
@@ -20,10 +22,15 @@ class MainActivity : Activity() {
     private lateinit var rawAxesText: TextView
     private lateinit var eventText: TextView
     private lateinit var logText: TextView
+    private lateinit var udpStatusText: TextView
+    private lateinit var ipEdit: EditText
+    private lateinit var portEdit: EditText
+    private lateinit var udpButton: Button
 
     private val pressed = linkedSetOf<String>()
     private val hatPressed = linkedSetOf<String>()
     private val logLines = ArrayDeque<String>()
+    private val udpSender = UdpSender()
     private var lx = 0f
     private var ly = 0f
     private var rx = 0f
@@ -45,12 +52,23 @@ class MainActivity : Activity() {
         rawAxesText = findViewById(R.id.rawAxesText)
         eventText = findViewById(R.id.eventText)
         logText = findViewById(R.id.logText)
+        udpStatusText = findViewById(R.id.udpStatusText)
+        ipEdit = findViewById(R.id.ipEdit)
+        portEdit = findViewById(R.id.portEdit)
+        udpButton = findViewById(R.id.udpButton)
+
+        udpButton.setOnClickListener { toggleUdp() }
         refreshDevices()
     }
 
     override fun onResume() {
         super.onResume()
         refreshDevices()
+    }
+
+    override fun onDestroy() {
+        udpSender.stop()
+        super.onDestroy()
     }
 
     private fun isController(d: InputDevice): Boolean {
@@ -77,6 +95,39 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun toggleUdp() {
+        if (udpSender.isRunning()) {
+            udpSender.stop()
+            udpButton.text = "INICIAR TRANSMISSÃO"
+            udpStatusText.text = "UDP: parado"
+            return
+        }
+
+        val host = ipEdit.text.toString().trim()
+        val port = portEdit.text.toString().trim().toIntOrNull()
+        if (host.isEmpty() || port == null || port !in 1..65535) {
+            udpStatusText.text = "UDP: IP ou porta inválidos"
+            return
+        }
+
+        try {
+            udpSender.start(host, port) { sequence ->
+                UdpSender.buildPacket(
+                    sequence = sequence,
+                    timeMs = System.currentTimeMillis(),
+                    lx = lx, ly = ly, rx = rx, ry = ry, l2 = l2, r2 = r2,
+                    buttons = buttonMask(),
+                    dpad = dpadMask()
+                )
+            }
+            udpButton.text = "PARAR TRANSMISSÃO"
+            udpStatusText.text = "UDP: enviando para $host:$port (~120 Hz)"
+        } catch (e: Exception) {
+            udpStatusText.text = "UDP: erro ao iniciar (${e.message ?: "desconhecido"})"
+            udpSender.stop()
+        }
+    }
+
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
         val d = e.device
         if (d != null && isController(d)) {
@@ -86,8 +137,6 @@ class MainActivity : Activity() {
                 KeyEvent.ACTION_UP -> pressed.remove(name)
             }
 
-            // Android can repeat ACTION_DOWN while a button is held.
-            // Keep the pressed state, but don't treat the repeats as new presses in the log.
             val isRepeat = e.action == KeyEvent.ACTION_DOWN && e.repeatCount > 0
             if (!isRepeat) {
                 eventText.text = "KEY ${actionName(e.action)} code=${e.keyCode} " +
@@ -148,12 +197,29 @@ class MainActivity : Activity() {
 
             val pressedNow = newHat.joinToString(" ").ifEmpty { "nenhum" }
             val released = old - newHat
-            if (newHat.isNotEmpty()) {
-                addLog("HAT D-pad: $pressedNow")
-            } else if (released.isNotEmpty()) {
-                addLog("HAT D-pad: soltou")
-            }
+            if (newHat.isNotEmpty()) addLog("HAT D-pad: $pressedNow")
+            else if (released.isNotEmpty()) addLog("HAT D-pad: soltou")
         }
+    }
+
+    private fun buttonMask(): Int {
+        var mask = 0
+        val names = listOf(
+            "A / X", "B / Círculo", "X / Quadrado", "Y / Triângulo",
+            "L1", "R1", "L2", "R2", "L3", "R3",
+            "Options / Start", "Share / Select", "PS / Mode"
+        )
+        for ((i, name) in names.withIndex()) if (pressed.contains(name)) mask = mask or (1 shl i)
+        return mask
+    }
+
+    private fun dpadMask(): Int {
+        var mask = 0
+        if (hatPressed.contains("D-pad ↑") || pressed.contains("D-pad ↑")) mask = mask or 1
+        if (hatPressed.contains("D-pad ↓") || pressed.contains("D-pad ↓")) mask = mask or 2
+        if (hatPressed.contains("D-pad ←") || pressed.contains("D-pad ←")) mask = mask or 4
+        if (hatPressed.contains("D-pad →") || pressed.contains("D-pad →")) mask = mask or 8
+        return mask
     }
 
     private fun updateButtonsText() {
