@@ -1,33 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:fillViewport="true" android:background="#101114">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="24dp">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="UDP RECEIVER — TV" android:textSize="28sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:gravity="center"/>
-        <TextView android:id="@+id/receiverStatusText" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="10dp"
-            android:text="UDP: parado" android:textSize="17sp" android:textColor="#8BC34A"
-            android:gravity="center"/>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginTop="18dp">
-            <EditText android:id="@+id/receiverPortEdit" android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_weight="1"
-                android:text="4242" android:hint="Porta UDP" android:textColor="#FFFFFF"
-                android:textColorHint="#777777" android:inputType="number" android:singleLine="true"/>
-            <Button android:id="@+id/receiverStartButton" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:layout_marginStart="12dp"
-                android:text="INICIAR RECEPTOR"/>
-        </LinearLayout>
-        <TextView android:id="@+id/receiverPacketText" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="22dp"
-            android:text="ÚLTIMO PACOTE\nNenhum pacote recebido ainda."
-            android:textColor="#FFFFFF" android:textSize="18sp" android:fontFamily="monospace"/>
-        <TextView android:id="@+id/receiverLogText" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:layout_marginTop="22dp"
-            android:text="LOG DE PACOTES" android:textColor="#8BC34A"
-            android:textSize="13sp" android:fontFamily="monospace"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="28dp"
+    android:background="#101114"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="DANIELL'S CONTROLLER"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/receiverStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PRONTO • aguardando início"
+            android:textColor="#8BC34A"
+            android:textSize="16sp"
+            android:textStyle="bold" />
     </LinearLayout>
-</ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PORTA UDP"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp" />
+        <EditText
+            android:id="@+id/receiverPortEdit"
+            android:layout_width="110dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="10dp"
+            android:background="#25272C"
+            android:gravity="center"
+            android:inputType="number"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:text="4242"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+        <Button
+            android:id="@+id/receiverStartButton"
+            android:layout_width="240dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="18dp"
+            android:focusable="true"
+            android:text="RECEBER CONTROLE"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/receiverStatsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Porta UDP: 4242 • receptor parado"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/receiverPacketText"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="#181A1F"
+            android:fontFamily="monospace"
+            android:padding="18dp"
+            android:text="ÚLTIMO PACOTE\nAguardando dados do celular..."
+            android:textColor="#FFFFFF"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/receiverLogText"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:background="#181A1F"
+            android:fontFamily="monospace"
+            android:padding="14dp"
+            android:text="LOG RECENTE\nNenhum pacote recebido."
+            android:textColor="#8BC34A"
+            android:textSize="12sp" />
+    </LinearLayout>
+</LinearLayout>
