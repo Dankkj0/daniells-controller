@@ -24,6 +24,7 @@ class HidTestActivity : Activity() {
     private var hid: BluetoothHidDevice? = null
     private var adapter: BluetoothAdapter? = null
     private var registered = false
+    private var selectedDevice: BluetoothDevice? = null
     private val executor = Executors.newSingleThreadExecutor()
 
     private val profileListener = object : BluetoothProfile.ServiceListener {
@@ -32,6 +33,8 @@ class HidTestActivity : Activity() {
                 hid = proxy as BluetoothHidDevice
                 statusText.text = "HID disponível • pronto para registrar"
                 registerButton.isEnabled = true
+                refreshBondedDevices()
+                refreshHidConnectionState()
             }
         }
 
@@ -40,7 +43,7 @@ class HidTestActivity : Activity() {
                 hid = null
                 registered = false
                 statusText.text = "Serviço HID Bluetooth desconectado"
-                connectionText.text = "TV: desconectada"
+                connectionText.text = "TV: desconectada\nHID: serviço indisponível"
             }
         }
     }
@@ -56,18 +59,14 @@ class HidTestActivity : Activity() {
                 }
                 registerButton.text = if (registered) "DESREGISTRAR HID" else "REGISTRAR COMO GAMEPAD"
                 refreshBondedDevices()
+                refreshHidConnectionState()
             }
         }
 
         override fun onConnectionStateChanged(device: BluetoothDevice, state: Int) {
             runOnUiThread {
-                val name = try { device.name ?: device.address } catch (_: SecurityException) { device.address }
-                connectionText.text = when (state) {
-                    BluetoothProfile.STATE_CONNECTED -> "TV: CONECTADA ✓\nHost: $name"
-                    BluetoothProfile.STATE_CONNECTING -> "TV: CONECTANDO...\nHost: $name"
-                    BluetoothProfile.STATE_DISCONNECTING -> "TV: DESCONECTANDO..."
-                    else -> "TV: desconectada\nÚltimo host: $name"
-                }
+                selectedDevice = device
+                renderConnectionState(device, state)
             }
         }
     }
@@ -82,7 +81,10 @@ class HidTestActivity : Activity() {
 
         registerButton.isEnabled = false
         registerButton.setOnClickListener { toggleRegistration() }
-        findViewById<Button>(R.id.hidRefreshButton).setOnClickListener { refreshBondedDevices() }
+        findViewById<Button>(R.id.hidRefreshButton).setOnClickListener {
+            refreshBondedDevices()
+            refreshHidConnectionState()
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             statusText.text = "HID Device requer Android 9 (API 28) ou superior"
@@ -111,7 +113,7 @@ class HidTestActivity : Activity() {
     override fun onDestroy() {
         try {
             if (registered) hid?.unregisterApp()
-            adapter?.closeProfileProxy(BluetoothProfile.HID_DEVICE, hid)
+            hid?.let { adapter?.closeProfileProxy(BluetoothProfile.HID_DEVICE, it) }
         } catch (_: Exception) { }
         executor.shutdownNow()
         super.onDestroy()
@@ -137,6 +139,7 @@ class HidTestActivity : Activity() {
     private fun toggleRegistration() {
         if (registered) {
             hid?.unregisterApp()
+            connectionText.text = "TV: desconectada\nHID: desregistrando..."
             return
         }
         val profile = hid
@@ -210,15 +213,70 @@ class HidTestActivity : Activity() {
     private fun connectTo(device: BluetoothDevice) {
         val profile = hid
         if (!registered || profile == null) {
-            connectionText.text = "Registre o GAMEPAD primeiro"
+            connectionText.text = "TV: não conectada\nRegistre o GAMEPAD primeiro"
             return
         }
-        connectionText.text = "TV: solicitando conexão..."
+        selectedDevice = device
+        val name = try { device.name ?: device.address } catch (_: SecurityException) { device.address }
+        connectionText.text = "TV: SOLICITANDO CONEXÃO...\nHost: $name\nHID: aguardando STATE_CONNECTED"
         try {
-            profile.connect(device)
+            val accepted = profile.connect(device)
+            if (!accepted) {
+                connectionText.text = "TV: conexão recusada pelo perfil HID\nHost: $name\nconnect() = false"
+            } else {
+                connectionText.text = "TV: PEDIDO ENVIADO ✓\nHost: $name\nAguardando conexão HID real..."
+                refreshHidConnectionState()
+            }
         } catch (e: SecurityException) {
-            connectionText.text = "Sem permissão Bluetooth para conectar"
+            connectionText.text = "TV: sem permissão Bluetooth para conectar\nHost: $name"
+        } catch (e: Exception) {
+            connectionText.text = "TV: erro ao conectar\nHost: $name\n${e.message ?: "erro desconhecido"}"
         }
+    }
+
+    private fun refreshHidConnectionState() {
+        val profile = hid ?: return
+        if (!registered) return
+        try {
+            val connected = profile.connectedDevices
+            if (connected.isNotEmpty()) {
+                val device = connected.first()
+                selectedDevice = device
+                renderConnectionState(device, BluetoothProfile.STATE_CONNECTED)
+                return
+            }
+
+            val device = selectedDevice
+            if (device != null) {
+                val state = profile.getConnectionState(device)
+                renderConnectionState(device, state)
+            } else {
+                connectionText.text = "TV: desconectada\nHID: registrado, nenhum host conectado"
+            }
+        } catch (_: SecurityException) {
+            connectionText.text = "TV: não foi possível consultar o estado HID\nPermissão Bluetooth necessária"
+        } catch (e: Exception) {
+            connectionText.text = "TV: estado HID indisponível\n${e.message ?: "erro desconhecido"}"
+        }
+    }
+
+    private fun renderConnectionState(device: BluetoothDevice, state: Int) {
+        val name = try { device.name ?: device.address } catch (_: SecurityException) { device.address }
+        val label = when (state) {
+            BluetoothProfile.STATE_CONNECTED -> "CONECTADA ✓"
+            BluetoothProfile.STATE_CONNECTING -> "CONECTANDO..."
+            BluetoothProfile.STATE_DISCONNECTING -> "DESCONECTANDO..."
+            else -> "DESCONECTADA"
+        }
+        connectionText.text = "TV: $label\nHost: $name\nEstado HID: ${stateName(state)}"
+    }
+
+    private fun stateName(state: Int): String = when (state) {
+        BluetoothProfile.STATE_CONNECTED -> "STATE_CONNECTED"
+        BluetoothProfile.STATE_CONNECTING -> "STATE_CONNECTING"
+        BluetoothProfile.STATE_DISCONNECTING -> "STATE_DISCONNECTING"
+        BluetoothProfile.STATE_DISCONNECTED -> "STATE_DISCONNECTED"
+        else -> "STATE_$state"
     }
 
     private fun hasBluetoothConnectPermission(): Boolean {
