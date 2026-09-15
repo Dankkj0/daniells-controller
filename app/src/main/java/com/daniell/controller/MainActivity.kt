@@ -100,8 +100,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isGamepadEvent(event: KeyEvent): Boolean {
-        return event.isGamepadKey ||
-            event.keyCode in KeyEvent.KEYCODE_BUTTON_A..KeyEvent.KEYCODE_BUTTON_R1
+        return KeyEvent.isGamepadKey(event.keyCode)
     }
 
     private fun mapGamepadKey(keyCode: Int): Int? = when (keyCode) {
