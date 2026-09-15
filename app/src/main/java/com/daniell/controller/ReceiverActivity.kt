@@ -16,6 +16,7 @@ class ReceiverActivity : Activity() {
     private lateinit var startButton: Button
     private lateinit var statusText: TextView
     private lateinit var packetText: TextView
+    private lateinit var statsText: TextView
     private lateinit var logText: TextView
 
     private var receiver: UdpReceiver? = null
@@ -23,8 +24,8 @@ class ReceiverActivity : Activity() {
     private var packets = 0L
     private var lastSequence: Int? = null
     private var lost = 0L
-    private var lastUiMs = 0L
-    private var packetsSinceUi = 0L
+    @Volatile private var lastPacket: UdpReceiver.Packet? = null
+    @Volatile private var lastPacketUiMs = 0L
     private val logLines = ArrayDeque<String>()
     private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
 
@@ -35,8 +36,10 @@ class ReceiverActivity : Activity() {
         startButton = findViewById(R.id.receiverStartButton)
         statusText = findViewById(R.id.receiverStatusText)
         packetText = findViewById(R.id.receiverPacketText)
+        statsText = findViewById(R.id.receiverStatsText)
         logText = findViewById(R.id.receiverLogText)
         startButton.setOnClickListener { toggleReceiver() }
+        startButton.requestFocus()
     }
 
     override fun onDestroy() {
@@ -49,73 +52,95 @@ class ReceiverActivity : Activity() {
         if (receiver?.isRunning() == true) {
             receiver?.stop()
             receiver = null
-            startButton.text = "INICIAR RECEPTOR"
-            statusText.text = "UDP: parado"
+            startButton.text = "RECEBER CONTROLE"
+            statusText.text = "PRONTO • aguardando início"
+            statsText.text = "Porta UDP: ${portEdit.text} • receptor parado"
             return
         }
 
         val port = portEdit.text.toString().trim().toIntOrNull()
         if (port == null || port !in 1..65535) {
-            statusText.text = "UDP: porta inválida"
+            statusText.text = "ERRO • porta inválida"
             return
         }
 
-        packets = 0
-        lost = 0
+        packets = 0L
+        lost = 0L
         lastSequence = null
-        packetsSinceUi = 0
+        lastPacket = null
+        lastPacketUiMs = 0L
         logLines.clear()
-        logText.text = "LOG DE PACOTES"
+        packetText.text = "ÚLTIMO PACOTE\nAguardando dados do celular..."
+        logText.text = "LOG DE PACOTES\nNenhum pacote recebido."
+        statsText.text = "Porta UDP: $port • abrindo..."
 
-        receiver = UdpReceiver(port) { p ->
-            packets++
-            packetsSinceUi++
-            val previous = lastSequence
-            if (previous != null) {
-                val delta = p.sequence - previous
-                if (delta > 1) lost += delta - 1
+        val newReceiver = UdpReceiver(
+            port = port,
+            onPacket = { p -> onPacketReceived(p) },
+            onError = { message ->
+                mainHandler.post {
+                    statusText.text = "ERRO NO RECEPTOR • $message"
+                    startButton.text = "RECEBER CONTROLE"
+                }
             }
-            lastSequence = p.sequence
-            mainHandler.post { showPacket(p) }
-        }
+        )
 
         try {
-            receiver!!.start()
-            startButton.text = "PARAR RECEPTOR"
-            statusText.text = "UDP: escutando na porta $port..."
+            // start() binds synchronously, so a port/bind failure is caught here.
+            newReceiver.start()
+            receiver = newReceiver
+            startButton.text = "PARAR RECEPÇÃO"
+            statusText.text = "RECEPTOR ATIVO • aguardando celular..."
+            statsText.text = "Porta UDP: $port • 0 pacotes"
         } catch (e: Exception) {
-            receiver?.stop()
-            receiver = null
-            statusText.text = "UDP: erro ao iniciar (${e.message ?: "desconhecido"})"
+            newReceiver.stop()
+            statusText.text = "NÃO FOI POSSÍVEL ABRIR A PORTA\n${e.message ?: "erro desconhecido"}"
+            statsText.text = "Escolha outra porta e tente novamente."
+        }
+    }
+
+    private fun onPacketReceived(p: UdpReceiver.Packet) {
+        packets++
+        val previous = lastSequence
+        if (previous != null) {
+            val delta = p.sequence - previous
+            if (delta > 1) lost += delta - 1
+        }
+        lastSequence = p.sequence
+        lastPacket = p
+
+        val now = System.currentTimeMillis()
+        if (now - lastPacketUiMs >= 100L) {
+            lastPacketUiMs = now
+            mainHandler.post {
+                val latest = lastPacket ?: return@post
+                showPacket(latest)
+            }
         }
     }
 
     private fun showPacket(p: UdpReceiver.Packet) {
         val now = System.currentTimeMillis()
-        val hz = if (lastUiMs == 0L) 0.0 else packetsSinceUi * 1000.0 / (now - lastUiMs).coerceAtLeast(1L)
-        if (now - lastUiMs >= 250L) {
-            lastUiMs = now
-            packetsSinceUi = 0
-            statusText.text = "RECEBENDO • ${hz.toInt()} pkt/s • total $packets • perdidos $lost • origem ${p.senderAddress}"
-        }
+        statusText.text = "RECEBENDO CONTROLE • ${p.senderAddress}"
+        statsText.text = "Porta UDP: ${portEdit.text}   •   ${packets} pacotes   •   perdidos: $lost   •   origem: ${p.senderAddress}"
 
         packetText.text = buildString {
-            append("ÚLTIMO PACOTE\n")
-            append("Seq: ${p.sequence}\n")
-            append("Timestamp: ${p.timestampMs} (${timeFormat.format(Date(p.timestampMs))})\n")
-            append("Recebido: ${timeFormat.format(Date(now))}\n")
-            append("LX: ${f(p.lx)}    LY: ${f(p.ly)}\n")
-            append("RX: ${f(p.rx)}    RY: ${f(p.ry)}\n")
-            append("L2: ${f(p.l2)}    R2: ${f(p.r2)}\n")
-            append("Botões: ${buttonNames(p.buttons)}\n")
-            append("D-pad: ${dpadNames(p.dpad)}\n")
-            append("Origem: ${p.senderAddress}")
+            append("SEQ ${p.sequence}     TIMESTAMP ${p.timestampMs}\n")
+            append("Recebido: ${timeFormat.format(Date(now))}\n\n")
+            append("ANALÓGICOS\n")
+            append("LX ${f(p.lx)}     LY ${f(p.ly)}\n")
+            append("RX ${f(p.rx)}     RY ${f(p.ry)}\n\n")
+            append("GATILHOS\n")
+            append("L2 ${f(p.l2)}     R2 ${f(p.r2)}\n\n")
+            append("BOTÕES\n${buttonNames(p.buttons)}\n\n")
+            append("D-PAD\n${dpadNames(p.dpad)}")
         }
 
-        if (logLines.size >= 10) logLines.removeFirst()
-        logLines.addLast(String.format(Locale.US, "%s  seq=%d  LX=% .2f LY=% .2f RX=% .2f RY=% .2f",
+        if (logLines.size >= 8) logLines.removeFirst()
+        logLines.addLast(String.format(Locale.US,
+            "%s  seq=%d  LX=% .2f LY=% .2f RX=% .2f RY=% .2f",
             timeFormat.format(Date(now)), p.sequence, p.lx, p.ly, p.rx, p.ry))
-        logText.text = "LOG DE PACOTES\n" + logLines.joinToString("\n")
+        logText.text = "LOG RECENTE\n" + logLines.joinToString("\n")
     }
 
     private fun buttonNames(mask: Int): String {
