@@ -1,1 +1,0 @@
-The ADB TV screen is activity_adb_tv.xml.
