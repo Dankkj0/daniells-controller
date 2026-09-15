@@ -5,41 +5,24 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class ReceiverActivity : Activity() {
-    private lateinit var portEdit: EditText
     private lateinit var startButton: Button
     private lateinit var statusText: TextView
-    private lateinit var packetText: TextView
     private lateinit var statsText: TextView
-    private lateinit var logText: TextView
 
     private var receiver: UdpReceiver? = null
     private lateinit var tvDiscovery: TvDiscovery
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var packets = 0L
-    private var lastSequence: Int? = null
-    private var lost = 0L
-    @Volatile private var lastPacket: UdpReceiver.Packet? = null
-    @Volatile private var lastPacketUiMs = 0L
-    private val logLines = ArrayDeque<String>()
-    private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         setContentView(R.layout.activity_receiver)
         tvDiscovery = TvDiscovery(this)
-        portEdit = findViewById(R.id.receiverPortEdit)
         startButton = findViewById(R.id.receiverStartButton)
         statusText = findViewById(R.id.receiverStatusText)
-        packetText = findViewById(R.id.receiverPacketText)
         statsText = findViewById(R.id.receiverStatsText)
-        logText = findViewById(R.id.receiverLogText)
         startButton.setOnClickListener { toggleReceiver() }
         startButton.requestFocus()
     }
@@ -57,31 +40,26 @@ class ReceiverActivity : Activity() {
             receiver?.stop()
             receiver = null
             startButton.text = "RECEBER CONTROLE"
-            statusText.text = "PRONTO • aguardando início"
-            statsText.text = "Porta UDP: ${portEdit.text} • receptor parado"
+            statusText.text = "TV pronta para receber"
+            statsText.text = "Pronto • rede Wi-Fi local"
             return
         }
 
-        // The receiver always uses the fixed port advertised to phones.
         val port = TvDiscovery.DEFAULT_PORT
-        portEdit.setText(port.toString())
-        packets = 0L
-        lost = 0L
-        lastSequence = null
-        lastPacket = null
-        lastPacketUiMs = 0L
-        logLines.clear()
-        packetText.text = "ÚLTIMO PACOTE\nAguardando dados do celular..."
-        logText.text = "LOG DE PACOTES\nNenhum pacote recebido."
-        statsText.text = "Porta UDP: $port • abrindo..."
+        statusText.text = "Iniciando receptor..."
+        statsText.text = "Preparando conexão local..."
 
         val newReceiver = UdpReceiver(
             port = port,
-            onPacket = { p -> onPacketReceived(p) },
+            onPacket = { _ ->
+                // Input is handled by the receiver; the TV interface intentionally
+                // stays clean and does not expose packet diagnostics.
+            },
             onError = { message ->
                 mainHandler.post {
                     tvDiscovery.unregisterReceiver()
-                    statusText.text = "ERRO NO RECEPTOR • $message"
+                    statusText.text = "Não foi possível receber o controle"
+                    statsText.text = message
                     startButton.text = "RECEBER CONTROLE"
                 }
             }
@@ -91,21 +69,20 @@ class ReceiverActivity : Activity() {
             newReceiver.start()
             receiver = newReceiver
             startButton.text = "PARAR RECEPÇÃO"
-            statusText.text = "RECEPTOR ATIVO • procurando celular..."
-            statsText.text = "Porta UDP: $port • anunciando esta TV..."
+            statusText.text = "Aguardando celular..."
+            statsText.text = "TV disponível na rede Wi-Fi"
 
-            // Advertise only after the UDP socket is actually listening.
             tvDiscovery.registerReceiver(
                 port = port,
-                onReady = { serviceName ->
+                onReady = {
                     mainHandler.post {
-                        statusText.text = "RECEPTOR ATIVO • TV encontrada como $serviceName"
-                        statsText.text = "Porta UDP: $port • TV disponível na rede Wi-Fi"
+                        statusText.text = "TV disponível • aguardando controle"
+                        statsText.text = "Conecte o controle no celular e selecione esta TV"
                     }
                 },
                 onError = { message ->
                     mainHandler.post {
-                        statusText.text = "RECEPTOR ATIVO • descoberta indisponível"
+                        statusText.text = "Receptor ativo • descoberta indisponível"
                         statsText.text = message
                     }
                 }
@@ -113,69 +90,8 @@ class ReceiverActivity : Activity() {
         } catch (e: Exception) {
             newReceiver.stop()
             tvDiscovery.unregisterReceiver()
-            statusText.text = "NÃO FOI POSSÍVEL ABRIR A PORTA\n${e.message ?: "erro desconhecido"}"
-            statsText.text = "Tente novamente."
+            statusText.text = "Não foi possível iniciar"
+            statsText.text = e.message ?: "Erro desconhecido"
         }
     }
-
-    private fun onPacketReceived(p: UdpReceiver.Packet) {
-        packets++
-        val previous = lastSequence
-        if (previous != null) {
-            val delta = p.sequence - previous
-            if (delta > 1) lost += delta - 1
-        }
-        lastSequence = p.sequence
-        lastPacket = p
-
-        val now = System.currentTimeMillis()
-        if (now - lastPacketUiMs >= 100L) {
-            lastPacketUiMs = now
-            mainHandler.post {
-                val latest = lastPacket ?: return@post
-                showPacket(latest)
-            }
-        }
-    }
-
-    private fun showPacket(p: UdpReceiver.Packet) {
-        val now = System.currentTimeMillis()
-        statusText.text = "RECEBENDO CONTROLE • ${p.senderAddress}"
-        statsText.text = "Porta UDP: ${portEdit.text}   •   ${packets} pacotes   •   perdidos: $lost   •   origem: ${p.senderAddress}"
-
-        packetText.text = buildString {
-            append("SEQ ${p.sequence}     TIMESTAMP ${p.timestampMs}\n")
-            append("Recebido: ${timeFormat.format(Date(now))}\n\n")
-            append("ANALÓGICOS\n")
-            append("LX ${f(p.lx)}     LY ${f(p.ly)}\n")
-            append("RX ${f(p.rx)}     RY ${f(p.ry)}\n\n")
-            append("GATILHOS\n")
-            append("L2 ${f(p.l2)}     R2 ${f(p.r2)}\n\n")
-            append("BOTÕES\n${buttonNames(p.buttons)}\n\n")
-            append("D-PAD\n${dpadNames(p.dpad)}")
-        }
-
-        if (logLines.size >= 8) logLines.removeFirst()
-        logLines.addLast(String.format(Locale.US,
-            "%s  seq=%d  LX=% .2f LY=% .2f RX=% .2f RY=% .2f",
-            timeFormat.format(Date(now)), p.sequence, p.lx, p.ly, p.rx, p.ry))
-        logText.text = "LOG RECENTE\n" + logLines.joinToString("\n")
-    }
-
-    private fun buttonNames(mask: Int): String {
-        val names = listOf("X", "Círculo", "Quadrado", "Triângulo", "L1", "R1", "L2", "R2", "L3", "R3", "Options", "Share", "PS")
-        val active = names.mapIndexedNotNull { i, n -> if ((mask and (1 shl i)) != 0) n else null }
-        return if (active.isEmpty()) "Nenhum" else active.joinToString("  •  ")
-    }
-
-    private fun dpadNames(mask: Int): String {
-        val active = mutableListOf<String>()
-        if ((mask and 1) != 0) active.add("↑")
-        if ((mask and 2) != 0) active.add("↓")
-        if ((mask and 4) != 0) active.add("←")
-        if ((mask and 8) != 0) active.add("→")
-        return if (active.isEmpty()) "Nenhum" else active.joinToString(" ")
-    }
-
-    private fun f(v: Float) = String.format(Locale.US, "% .3f", v)
 }
