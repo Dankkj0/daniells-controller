@@ -20,6 +20,7 @@ class ReceiverActivity : Activity() {
     private lateinit var logText: TextView
 
     private var receiver: UdpReceiver? = null
+    private lateinit var tvDiscovery: TvDiscovery
     private val mainHandler = Handler(Looper.getMainLooper())
     private var packets = 0L
     private var lastSequence: Int? = null
@@ -32,6 +33,7 @@ class ReceiverActivity : Activity() {
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         setContentView(R.layout.activity_receiver)
+        tvDiscovery = TvDiscovery(this)
         portEdit = findViewById(R.id.receiverPortEdit)
         startButton = findViewById(R.id.receiverStartButton)
         statusText = findViewById(R.id.receiverStatusText)
@@ -43,6 +45,7 @@ class ReceiverActivity : Activity() {
     }
 
     override fun onDestroy() {
+        tvDiscovery.unregisterReceiver()
         receiver?.stop()
         receiver = null
         super.onDestroy()
@@ -50,6 +53,7 @@ class ReceiverActivity : Activity() {
 
     private fun toggleReceiver() {
         if (receiver?.isRunning() == true) {
+            tvDiscovery.unregisterReceiver()
             receiver?.stop()
             receiver = null
             startButton.text = "RECEBER CONTROLE"
@@ -58,12 +62,9 @@ class ReceiverActivity : Activity() {
             return
         }
 
-        val port = portEdit.text.toString().trim().toIntOrNull()
-        if (port == null || port !in 1..65535) {
-            statusText.text = "ERRO • porta inválida"
-            return
-        }
-
+        // The receiver always uses the fixed port advertised to phones.
+        val port = TvDiscovery.DEFAULT_PORT
+        portEdit.setText(port.toString())
         packets = 0L
         lost = 0L
         lastSequence = null
@@ -79,6 +80,7 @@ class ReceiverActivity : Activity() {
             onPacket = { p -> onPacketReceived(p) },
             onError = { message ->
                 mainHandler.post {
+                    tvDiscovery.unregisterReceiver()
                     statusText.text = "ERRO NO RECEPTOR • $message"
                     startButton.text = "RECEBER CONTROLE"
                 }
@@ -86,16 +88,33 @@ class ReceiverActivity : Activity() {
         )
 
         try {
-            // start() binds synchronously, so a port/bind failure is caught here.
             newReceiver.start()
             receiver = newReceiver
             startButton.text = "PARAR RECEPÇÃO"
-            statusText.text = "RECEPTOR ATIVO • aguardando celular..."
-            statsText.text = "Porta UDP: $port • 0 pacotes"
+            statusText.text = "RECEPTOR ATIVO • procurando celular..."
+            statsText.text = "Porta UDP: $port • anunciando esta TV..."
+
+            // Advertise only after the UDP socket is actually listening.
+            tvDiscovery.registerReceiver(
+                port = port,
+                onReady = { serviceName ->
+                    mainHandler.post {
+                        statusText.text = "RECEPTOR ATIVO • TV encontrada como $serviceName"
+                        statsText.text = "Porta UDP: $port • TV disponível na rede Wi-Fi"
+                    }
+                },
+                onError = { message ->
+                    mainHandler.post {
+                        statusText.text = "RECEPTOR ATIVO • descoberta indisponível"
+                        statsText.text = message
+                    }
+                }
+            )
         } catch (e: Exception) {
             newReceiver.stop()
+            tvDiscovery.unregisterReceiver()
             statusText.text = "NÃO FOI POSSÍVEL ABRIR A PORTA\n${e.message ?: "erro desconhecido"}"
-            statsText.text = "Escolha outra porta e tente novamente."
+            statsText.text = "Tente novamente."
         }
     }
 
