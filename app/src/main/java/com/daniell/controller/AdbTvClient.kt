@@ -20,6 +20,9 @@ class AdbTvClient(private val context: Context) {
     fun setListener(listener: Listener?) { this.listener = listener }
 
     @Synchronized
+    fun isConnected(): Boolean = connection != null && socket?.isConnected == true && socket?.isClosed == false
+
+    @Synchronized
     fun connect(host: String, port: Int = 5555): Result<String> {
         close()
         return try {
