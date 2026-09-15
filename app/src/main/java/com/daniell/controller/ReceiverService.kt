@@ -23,11 +23,14 @@ class ReceiverService : Service() {
 
         val newReceiver = UdpReceiver(
             port = TvDiscovery.DEFAULT_PORT,
-            onPacket = { _ ->
-                // The actual gamepad injection layer will consume these packets later.
+            onPacket = { packet ->
+                lastPacket = packet
+                lastPacketAtMs = System.currentTimeMillis()
+                packetCount++
             },
             onError = {
                 isRunning = false
+                lastError = it
                 stopSelf()
             }
         )
@@ -36,23 +39,23 @@ class ReceiverService : Service() {
             newReceiver.start()
             receiver = newReceiver
             isRunning = true
+            lastError = null
             discovery.registerReceiver(
                 port = TvDiscovery.DEFAULT_PORT,
                 onReady = { },
-                onError = { }
+                onError = { lastError = it }
             )
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             newReceiver.stop()
             receiver = null
             discovery.unregisterReceiver()
             isRunning = false
+            lastError = e.message ?: "erro ao abrir a porta 4242"
             stopSelf()
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         isRunning = false
@@ -92,17 +95,21 @@ class ReceiverService : Service() {
                 CHANNEL_ID,
                 "Controle da TV",
                 NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Mantém o receptor de controle ativo na TV"
-            }
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
+            ).apply { description = "Mantém o receptor de controle ativo na TV" }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
     companion object {
-        @Volatile
-        var isRunning: Boolean = false
+        @Volatile var isRunning: Boolean = false
+            private set
+        @Volatile var lastPacket: UdpReceiver.Packet? = null
+            private set
+        @Volatile var lastPacketAtMs: Long = 0L
+            private set
+        @Volatile var packetCount: Long = 0L
+            private set
+        @Volatile var lastError: String? = null
             private set
 
         private const val CHANNEL_ID = "controller_receiver"
