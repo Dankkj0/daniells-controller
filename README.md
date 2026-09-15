@@ -1,11 +1,5 @@
 # daniell's controller
 
-v0.2.1 — diagnóstico de DualSense/controles físicos:
-- posição gráfica dos dois analógicos
-- valores raw e normalizados
-- gatilhos
-- botões e D-pad
-- log de eventos
-- informações do dispositivo
+Projeto Android reconstruído do zero.
 
-Package: com.daniell.controller
+Primeiro objetivo: conectar o celular à TV por ADB TCP na porta 5555 e testar HOME/VOLTAR.

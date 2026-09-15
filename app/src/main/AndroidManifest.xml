@@ -1,33 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
-    <uses-feature android:name="android.software.leanback" android:required="false" />
-
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-
-    <application android:allowBackup="true" android:label="daniell's controller" android:supportsRtl="true"
-        android:theme="@style/Theme.DaniellsController">
-        <activity android:name=".RoleSelectionActivity" android:label="daniell's controller" android:exported="true">
+    <application
+        android:theme="@style/Theme.DaniellsController"
+        android:label="daniell's controller"
+        android:allowBackup="false"
+        android:supportsRtl="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ReceiverActivity" android:label="daniell's controller TV" android:screenOrientation="landscape" android:exported="false" />
-        <activity android:name=".MainActivity" android:label="daniell's controller celular" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:name=".HidTestActivity" android:label="Teste HID Bluetooth" android:screenOrientation="portrait" android:exported="false" />
-        <activity android:name=".AdbTvActivity" android:label="Controle global ADB" android:screenOrientation="portrait" android:exported="false" />
-
-        <service
-            android:name=".ReceiverService"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
     </application>
 </manifest>

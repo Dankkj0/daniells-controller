@@ -1,8 +1,0 @@
-<resources>
-<style name="Theme.DaniellsController" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-    <item name="android:fontFamily">sans</item>
-    <item name="android:statusBarColor">#101114</item>
-    <item name="android:navigationBarColor">#101114</item>
-    <item name="android:colorAccent">#66BB6A</item>
-</style>
-</resources>
