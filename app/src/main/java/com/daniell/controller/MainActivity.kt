@@ -101,7 +101,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun isGamepadEvent(event: KeyEvent): Boolean {
         return event.keyCode in KeyEvent.KEYCODE_BUTTON_A..KeyEvent.KEYCODE_BUTTON_R1 ||
-            event.keyCode in KeyEvent.KEYCODE_DPAD_UP..KeyEvent.KEYCODE_DPAD_RIGHT
+            event.keyCode in KeyEvent.KEYCODE_DPAD_UP..KeyEvent.KEYCODE_DPAD_RIGHT ||
+            event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER
     }
 
     private fun mapGamepadKey(keyCode: Int): Int? = when (keyCode) {
