@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit
 class AdbTvClient(private val context: Context) {
     private var socket: Socket? = null
     private var connection: AdbConnection? = null
-    private var shellStream: AdbStream? = null
-    private var shellReader: Thread? = null
     private var listener: Listener? = null
 
     interface Listener {
@@ -26,8 +24,7 @@ class AdbTvClient(private val context: Context) {
     fun isConnected(): Boolean =
         connection != null &&
             socket?.isConnected == true &&
-            socket?.isClosed == false &&
-            shellStream?.isClosed == false
+            socket?.isClosed == false
 
     @Synchronized
     fun connect(host: String, port: Int = 5555): Result<String> {
@@ -40,29 +37,13 @@ class AdbTvClient(private val context: Context) {
 
             val c = AdbConnection.create(s, keys)
             if (!c.connect(5, TimeUnit.SECONDS, false)) {
-                throw IllegalStateException("A TV não aceitou a conexão ADB. Verifique a depuração ADB e a autorização.")
+                throw IllegalStateException(
+                    "A TV não aceitou a conexão ADB. Verifique a depuração ADB e a autorização."
+                )
             }
 
             socket = s
             connection = c
-
-            // Start a real interactive shell process. Keeping `sh` alive lets us
-            // send unlimited commands over the same ADB stream.
-            val stream = c.open("shell:sh")
-            shellStream = stream
-            shellReader = Thread {
-                try {
-                    while (!stream.isClosed) {
-                        stream.read()
-                    }
-                } catch (_: Exception) {
-                    // Stream ends when the shell/ADB connection is closed.
-                }
-            }.apply {
-                name = "adb-shell-reader"
-                isDaemon = true
-                start()
-            }
 
             val message = "Conectado à TV em $host:$port"
             listener?.onConnectionChanged(true, message)
@@ -76,22 +57,38 @@ class AdbTvClient(private val context: Context) {
 
     @Synchronized
     fun sendKeyEvent(keyCode: Int): Result<String> {
-        val stream = shellStream
+        val c = connection
             ?: return Result.failure(IllegalStateException("ADB não conectado"))
 
+        var stream: AdbStream? = null
         return try {
-            if (stream.isClosed) {
-                throw IllegalStateException("Stream ADB fechado")
+            // Each command gets its own ADB stream, but the underlying TCP/ADB
+            // connection stays alive. The remote shell normally closes this
+            // stream after the command finishes; that is expected and must NOT
+            // be treated as a lost ADB connection.
+            stream = c.open("shell:input keyevent $keyCode")
+
+            try {
+                while (!stream.isClosed) {
+                    stream.read()
+                }
+            } catch (_: java.io.IOException) {
+                // Expected when the remote shell sends CLSE after the command.
             }
 
-            // `sh` remains alive, so each command is executed without opening a
-            // new ADB stream and without disconnecting the main ADB connection.
-            stream.write("input keyevent $keyCode\n")
             Result.success("OK")
         } catch (e: Exception) {
+            // Only a real failure opening/using the stream should drop the main
+            // ADB connection. A normal per-command stream close is handled above.
+            closeStreamQuietly(stream)
             close()
-            listener?.onConnectionChanged(false, "Conexão perdida: ${e.message ?: "Stream ADB desconectado"}")
+            listener?.onConnectionChanged(
+                false,
+                "Conexão perdida: ${e.message ?: "Falha no comando ADB"}"
+            )
             Result.failure(e)
+        } finally {
+            closeStreamQuietly(stream)
         }
     }
 
@@ -101,10 +98,11 @@ class AdbTvClient(private val context: Context) {
         listener?.onConnectionChanged(false, "ADB desconectado")
     }
 
+    private fun closeStreamQuietly(stream: AdbStream?) {
+        try { stream?.close() } catch (_: Exception) {}
+    }
+
     private fun close() {
-        try { shellStream?.close() } catch (_: Exception) {}
-        shellStream = null
-        shellReader = null
         try { connection?.close() } catch (_: Exception) {}
         try { socket?.close() } catch (_: Exception) {}
         connection = null
