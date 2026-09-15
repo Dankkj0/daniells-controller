@@ -11,17 +11,14 @@
 
     <application android:allowBackup="true" android:label="daniell's controller" android:supportsRtl="true"
         android:theme="@style/Theme.DaniellsController">
-        <activity android:name=".ReceiverActivity" android:label="UDP Receiver" android:screenOrientation="landscape" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
+        <activity android:name=".RoleSelectionActivity" android:label="daniell's controller" android:screenOrientation="landscape" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ReceiverActivity" android:label="daniell's controller TV" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".MainActivity" android:label="daniell's controller celular" android:screenOrientation="portrait" android:exported="false" />
     </application>
 </manifest>
