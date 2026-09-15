@@ -38,16 +38,18 @@ class AdbTvClient(private val context: Context) {
 
             val c = AdbConnection.create(s, keys)
             if (!c.connect(5, TimeUnit.SECONDS, false)) {
-                throw IllegalStateException("A TV não aceitou a conexão ADB. Verifique a depuração ADB e a autorização.")
+                throw IllegalStateException(
+                    "A TV não aceitou a conexão ADB. Verifique a depuração ADB e a autorização."
+                )
             }
 
             socket = s
             connection = c
 
-            // Keep ONE shell process alive for the whole controller session.
-            // The loop reads one command at a time from stdin and executes it.
-            // This avoids opening/closing an ADB stream for every button press.
-            val stream = c.open("shell:sh -c 'while read cmd; do eval \"$cmd\"; done'")
+            // Keep one shell process alive. The shell variable must be escaped
+            // so Kotlin does not try to interpolate it.
+            val shellCommand = "shell:sh -c 'while read cmd; do eval \"\$cmd\"; done'"
+            val stream = c.open(shellCommand)
             shellStream = stream
             shellReader = Thread {
                 try {
@@ -79,13 +81,16 @@ class AdbTvClient(private val context: Context) {
         return try {
             if (stream.isClosed) throw IllegalStateException("Stream ADB fechado")
 
-            // No waiting for a new ADB stream or for the input process to exit.
-            // The persistent shell receives the command immediately.
+            // Send the command through the already-open shell stream.
+            // No new ADB stream is created for each button press.
             stream.write("input keyevent $keyCode\n")
             Result.success("OK")
         } catch (e: Exception) {
             close()
-            listener?.onConnectionChanged(false, "Conexão perdida: ${e.message ?: "Stream ADB desconectado"}")
+            listener?.onConnectionChanged(
+                false,
+                "Conexão perdida: ${e.message ?: "Stream ADB desconectado"}"
+            )
             Result.failure(e)
         }
     }
