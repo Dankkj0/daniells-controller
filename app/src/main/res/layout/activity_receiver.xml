@@ -3,108 +3,61 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="28dp"
+    android:gravity="center"
+    android:padding="48dp"
     android:background="#101114"
     android:focusable="true">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="DANIELL'S CONTROLLER"
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/receiverStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="PRONTO • aguardando início"
-            android:textColor="#8BC34A"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        android:text="daniell's controller"
+        android:textColor="#FFFFFF"
+        android:textSize="34sp"
+        android:textStyle="bold" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="PORTA UDP"
-            android:textColor="#AAAAAA"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/receiverPortEdit"
-            android:layout_width="110dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:background="#25272C"
-            android:gravity="center"
-            android:inputType="number"
-            android:selectAllOnFocus="true"
-            android:singleLine="true"
-            android:text="4242"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp" />
-        <Button
-            android:id="@+id/receiverStartButton"
-            android:layout_width="240dp"
-            android:layout_height="52dp"
-            android:layout_marginStart="18dp"
-            android:focusable="true"
-            android:text="RECEBER CONTROLE"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        android:layout_marginTop="10dp"
+        android:text="MODO TV"
+        android:textColor="#8BC34A"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/receiverStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:text="TV pronta para receber"
+        android:textColor="#BDBDBD"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/receiverStartButton"
+        android:layout_width="420dp"
+        android:layout_height="76dp"
+        android:layout_marginTop="30dp"
+        android:focusable="true"
+        android:text="RECEBER CONTROLE"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/receiverStatsText"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Porta UDP: 4242 • receptor parado"
-        android:textColor="#AAAAAA"
+        android:layout_marginTop="22dp"
+        android:text="Pronto • rede Wi-Fi local"
+        android:textColor="#777A80"
         android:textSize="14sp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/receiverPacketText"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:background="#181A1F"
-            android:fontFamily="monospace"
-            android:padding="18dp"
-            android:text="ÚLTIMO PACOTE\nAguardando dados do celular..."
-            android:textColor="#FFFFFF"
-            android:textSize="17sp" />
-
-        <TextView
-            android:id="@+id/receiverLogText"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="14dp"
-            android:layout_weight="1"
-            android:background="#181A1F"
-            android:fontFamily="monospace"
-            android:padding="14dp"
-            android:text="LOG RECENTE\nNenhum pacote recebido."
-            android:textColor="#8BC34A"
-            android:textSize="12sp" />
-    </LinearLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="34dp"
+        android:text="Abra o modo CELULAR no telefone para conectar um controle."
+        android:textColor="#66686D"
+        android:textSize="14sp" />
 </LinearLayout>
