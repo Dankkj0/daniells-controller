@@ -147,7 +147,7 @@ class AdbTvClient(private val context: Context) {
                 android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP)
         }
         return if (privateFile.exists() && publicFile.exists()) {
-            AdbCrypto.loadAdbKeyPair(privateFile, publicFile, base64)
+            AdbCrypto.loadAdbKeyPair(base64, privateFile, publicFile)
         } else {
             AdbCrypto.generateAdbKeyPair(base64).also { it.saveAdbKeyPair(privateFile, publicFile) }
         }
