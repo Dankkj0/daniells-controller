@@ -5,7 +5,12 @@ import java.net.DatagramSocket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class UdpReceiver(private val port: Int, private val onPacket: (Packet) -> Unit) {
+/** Receives the controller packets on the local network. */
+class UdpReceiver(
+    private val port: Int,
+    private val onPacket: (Packet) -> Unit,
+    private val onError: (String) -> Unit = {}
+) {
     data class Packet(
         val sequence: Int,
         val timestampMs: Long,
@@ -24,37 +29,46 @@ class UdpReceiver(private val port: Int, private val onPacket: (Packet) -> Unit)
     private var thread: Thread? = null
     private var socket: DatagramSocket? = null
 
+    /** Binds the UDP port before returning, so bind errors are visible to the TV UI. */
+    @Synchronized
     fun start() {
         stop()
+        val s = DatagramSocket(null)
+        s.reuseAddress = true
+        s.bind(java.net.InetSocketAddress("0.0.0.0", port))
+        socket = s
         running = true
+
         thread = Thread {
+            val buffer = ByteArray(2048)
             try {
-                val s = DatagramSocket(port)
-                socket = s
-                val buffer = ByteArray(2048)
                 while (running) {
                     val packet = DatagramPacket(buffer, buffer.size)
                     s.receive(packet)
                     if (!running) break
                     parse(packet)?.let(onPacket)
                 }
-                s.close()
-            } catch (_: Exception) {
-                // Normal shutdown or unavailable port.
+            } catch (e: Exception) {
+                if (running) onError(e.message ?: "erro de rede")
             } finally {
-                socket?.close()
-                socket = null
+                running = false
+                if (socket === s) socket = null
+                s.close()
             }
-        }.apply { name = "controller-udp-receiver" }
+        }.apply {
+            name = "controller-udp-receiver"
+            isDaemon = true
+        }
         thread!!.start()
     }
 
+    @Synchronized
     fun stop() {
         running = false
-        thread?.interrupt()
-        thread = null
         socket?.close()
         socket = null
+        thread?.interrupt()
+        thread = null
     }
 
     fun isRunning() = running
@@ -76,6 +90,9 @@ class UdpReceiver(private val port: Int, private val onPacket: (Packet) -> Unit)
         val r2 = b.float
         val buttons = b.int
         val dpad = b.get().toInt() and 0xFF
-        return Packet(sequence, timestampMs, lx, ly, rx, ry, l2, r2, buttons, dpad, packet.address.hostAddress ?: "?")
+        return Packet(
+            sequence, timestampMs, lx, ly, rx, ry, l2, r2,
+            buttons, dpad, packet.address.hostAddress ?: "?"
+        )
     }
 }
