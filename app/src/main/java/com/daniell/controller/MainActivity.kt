@@ -6,7 +6,7 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.Button
-import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import java.util.Locale
 
@@ -23,14 +23,16 @@ class MainActivity : Activity() {
     private lateinit var eventText: TextView
     private lateinit var logText: TextView
     private lateinit var udpStatusText: TextView
-    private lateinit var ipEdit: EditText
-    private lateinit var portEdit: EditText
     private lateinit var udpButton: Button
+    private lateinit var tvList: LinearLayout
 
     private val pressed = linkedSetOf<String>()
     private val hatPressed = linkedSetOf<String>()
     private val logLines = ArrayDeque<String>()
     private val udpSender = UdpSender()
+    private lateinit var tvDiscovery: TvDiscovery
+    private val discoveredTvs = linkedMapOf<String, TvDiscovery.Tv>()
+    private var selectedTv: TvDiscovery.Tv? = null
     private var lx = 0f
     private var ly = 0f
     private var rx = 0f
@@ -53,9 +55,9 @@ class MainActivity : Activity() {
         eventText = findViewById(R.id.eventText)
         logText = findViewById(R.id.logText)
         udpStatusText = findViewById(R.id.udpStatusText)
-        ipEdit = findViewById(R.id.ipEdit)
-        portEdit = findViewById(R.id.portEdit)
         udpButton = findViewById(R.id.udpButton)
+        tvList = findViewById(R.id.tvList)
+        tvDiscovery = TvDiscovery(this)
 
         udpButton.setOnClickListener { toggleUdp() }
         refreshDevices()
@@ -64,11 +66,86 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         refreshDevices()
+        startTvDiscovery()
+    }
+
+    override fun onPause() {
+        tvDiscovery.stopDiscovery()
+        super.onPause()
     }
 
     override fun onDestroy() {
+        tvDiscovery.stopDiscovery()
         udpSender.stop()
         super.onDestroy()
+    }
+
+    private fun startTvDiscovery() {
+        discoveredTvs.clear()
+        renderTvList("Procurando TVs na mesma rede Wi-Fi...")
+        tvDiscovery.startDiscovery(object : TvDiscovery.Listener {
+            override fun onTvFound(tv: TvDiscovery.Tv) {
+                runOnUiThread {
+                    discoveredTvs[tv.name] = tv
+                    renderTvList(null)
+                }
+            }
+
+            override fun onTvLost(name: String) {
+                runOnUiThread {
+                    discoveredTvs.remove(name)
+                    if (selectedTv?.name == name && !udpSender.isRunning()) selectedTv = null
+                    renderTvList(null)
+                }
+            }
+
+            override fun onError(message: String) {
+                runOnUiThread { renderTvList(message) }
+            }
+        })
+    }
+
+    private fun renderTvList(message: String?) {
+        tvList.removeAllViews()
+        if (message != null) {
+            val t = TextView(this).apply {
+                text = message
+                textSize = 13f
+                setTextColor(0xFFBDBDBD.toInt())
+                setPadding(0, 6, 0, 6)
+            }
+            tvList.addView(t)
+        }
+
+        if (discoveredTvs.isEmpty() && message == null) {
+            val t = TextView(this).apply {
+                text = "Nenhuma TV encontrada. Abra 'RECEBER CONTROLE' na TV."
+                textSize = 13f
+                setTextColor(0xFFBDBDBD.toInt())
+                setPadding(0, 6, 0, 6)
+            }
+            tvList.addView(t)
+            return
+        }
+
+        for (tv in discoveredTvs.values) {
+            val b = Button(this).apply {
+                text = if (selectedTv?.name == tv.name) "✓ ${tv.name}" else tv.name
+                setOnClickListener { selectTv(tv) }
+            }
+            tvList.addView(b)
+        }
+    }
+
+    private fun selectTv(tv: TvDiscovery.Tv) {
+        selectedTv = tv
+        udpStatusText.text = "TV selecionada: ${tv.name}"
+        renderTvList(null)
+        if (udpSender.isRunning()) {
+            udpSender.stop()
+            udpButton.text = "ENVIAR CONTROLE"
+        }
+        toggleUdp()
     }
 
     private fun isController(d: InputDevice): Boolean {
@@ -98,20 +175,19 @@ class MainActivity : Activity() {
     private fun toggleUdp() {
         if (udpSender.isRunning()) {
             udpSender.stop()
-            udpButton.text = "INICIAR TRANSMISSÃO"
-            udpStatusText.text = "UDP: parado"
+            udpButton.text = "ENVIAR CONTROLE"
+            udpStatusText.text = "Transmissão parada"
             return
         }
 
-        val host = ipEdit.text.toString().trim()
-        val port = portEdit.text.toString().trim().toIntOrNull()
-        if (host.isEmpty() || port == null || port !in 1..65535) {
-            udpStatusText.text = "UDP: IP ou porta inválidos"
+        val tv = selectedTv
+        if (tv == null) {
+            udpStatusText.text = "Selecione uma TV encontrada na rede."
             return
         }
 
         try {
-            udpSender.start(host, port) { sequence ->
+            udpSender.start(tv.host, TvDiscovery.DEFAULT_PORT) { sequence ->
                 UdpSender.buildPacket(
                     sequence = sequence,
                     timeMs = System.currentTimeMillis(),
@@ -120,10 +196,10 @@ class MainActivity : Activity() {
                     dpad = dpadMask()
                 )
             }
-            udpButton.text = "PARAR TRANSMISSÃO"
-            udpStatusText.text = "UDP: enviando para $host:$port (~120 Hz)"
+            udpButton.text = "PARAR ENVIO"
+            udpStatusText.text = "Enviando para ${tv.name} (~120 Hz)"
         } catch (e: Exception) {
-            udpStatusText.text = "UDP: erro ao iniciar (${e.message ?: "desconhecido"})"
+            udpStatusText.text = "Erro ao iniciar: ${e.message ?: "desconhecido"}"
             udpSender.stop()
         }
     }
