@@ -46,9 +46,9 @@ class AdbTvClient(private val context: Context) {
             socket = s
             connection = c
 
-            // Keep one interactive shell stream open for the whole connection.
-            // This avoids opening/closing an ADB stream for every button press.
-            val stream = c.open("shell:")
+            // Start a real interactive shell process. Keeping `sh` alive lets us
+            // send unlimited commands over the same ADB stream.
+            val stream = c.open("shell:sh")
             shellStream = stream
             shellReader = Thread {
                 try {
@@ -56,7 +56,7 @@ class AdbTvClient(private val context: Context) {
                         stream.read()
                     }
                 } catch (_: Exception) {
-                    // The stream ends when the ADB connection is closed.
+                    // Stream ends when the shell/ADB connection is closed.
                 }
             }.apply {
                 name = "adb-shell-reader"
@@ -84,7 +84,8 @@ class AdbTvClient(private val context: Context) {
                 throw IllegalStateException("Stream ADB fechado")
             }
 
-            // The interactive shell stays alive; only the command is written to it.
+            // `sh` remains alive, so each command is executed without opening a
+            // new ADB stream and without disconnecting the main ADB connection.
             stream.write("input keyevent $keyCode\n")
             Result.success("OK")
         } catch (e: Exception) {
