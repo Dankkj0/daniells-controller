@@ -136,7 +136,10 @@ class ReceiverActivity : Activity() {
         return names.mapIndexedNotNull { i, n -> if ((mask and (1 shl i)) != 0) n else null }
     }
 
-    private fun buttonText(mask: Int): String = buttonNames(mask).ifEmpty { "Nenhum" }.joinToString("  •  ")
+    private fun buttonText(mask: Int): String {
+        val names = buttonNames(mask)
+        return if (names.isEmpty()) "Nenhum" else names.joinToString("  •  ")
+    }
 
     private fun dpadText(mask: Int): String {
         val list = mutableListOf<String>()
