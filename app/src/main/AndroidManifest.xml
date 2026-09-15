@@ -23,6 +23,7 @@
         <activity android:name=".ReceiverActivity" android:label="daniell's controller TV" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".MainActivity" android:label="daniell's controller celular" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".HidTestActivity" android:label="Teste HID Bluetooth" android:screenOrientation="portrait" android:exported="false" />
+        <activity android:name=".AdbTvActivity" android:label="Controle global ADB" android:screenOrientation="portrait" android:exported="false" />
 
         <service
             android:name=".ReceiverService"
