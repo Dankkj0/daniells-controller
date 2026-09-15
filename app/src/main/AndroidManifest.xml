@@ -17,6 +17,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DaniellsController">
         <activity
+            android:name=".ReceiverActivity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:exported="true">
