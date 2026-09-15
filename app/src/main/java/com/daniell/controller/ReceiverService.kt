@@ -1,6 +1,5 @@
 package com.daniell.controller
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -28,6 +27,7 @@ class ReceiverService : Service() {
                 // The actual gamepad injection layer will consume these packets later.
             },
             onError = {
+                isRunning = false
                 stopSelf()
             }
         )
@@ -35,6 +35,7 @@ class ReceiverService : Service() {
         try {
             newReceiver.start()
             receiver = newReceiver
+            isRunning = true
             discovery.registerReceiver(
                 port = TvDiscovery.DEFAULT_PORT,
                 onReady = { },
@@ -44,6 +45,7 @@ class ReceiverService : Service() {
             newReceiver.stop()
             receiver = null
             discovery.unregisterReceiver()
+            isRunning = false
             stopSelf()
         }
     }
@@ -53,6 +55,7 @@ class ReceiverService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         tvDiscovery?.unregisterReceiver()
         tvDiscovery = null
         receiver?.stop()
@@ -98,6 +101,10 @@ class ReceiverService : Service() {
     }
 
     companion object {
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+
         private const val CHANNEL_ID = "controller_receiver"
         private const val NOTIFICATION_ID = 4242
     }
