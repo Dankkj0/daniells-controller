@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#101114">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="TESTE HID BLUETOOTH" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" android:gravity="center" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="daniell's controller • Gamepad virtual" android:textColor="#BDBDBD" android:textSize="14sp" android:gravity="center" />
+
+        <TextView android:id="@+id/hidStatusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:text="Inicializando Bluetooth HID..." android:textColor="#8BC34A" android:textSize="18sp" android:textStyle="bold" />
+        <TextView android:id="@+id/hidConnectionText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="TV: desconectada" android:textColor="#FFFFFF" android:textSize="18sp" />
+
+        <Button android:id="@+id/hidRegisterButton" android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="18dp" android:text="REGISTRAR COMO GAMEPAD" android:textSize="16sp" />
+        <Button android:id="@+id/hidRefreshButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="ATUALIZAR DISPOSITIVOS PAREADOS" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:text="HOSTS BLUETOOTH PAREADOS" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="A TV precisa estar pareada antes de usar CONECTAR. O teste não envia comandos ainda; ele só verifica registro e conexão HID." android:textColor="#AAAAAA" android:textSize="12sp" />
+        <LinearLayout android:id="@+id/hidDevicesLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:text="O que queremos comprovar" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="1. Registro HID aceito pelo celular&#10;2. A TV aceita o celular como HID Host&#10;3. A conexão aparece como gamepad&#10;4. Depois disso implementaremos os relatórios dos botões e analógicos" android:textColor="#BDBDBD" android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>
