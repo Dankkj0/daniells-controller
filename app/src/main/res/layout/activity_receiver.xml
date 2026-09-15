@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:background="#101114">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="UDP RECEIVER — TV" android:textSize="28sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:gravity="center"/>
+        <TextView android:id="@+id/receiverStatusText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="10dp"
+            android:text="UDP: parado" android:textSize="17sp" android:textColor="#8BC34A"
+            android:gravity="center"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="18dp">
+            <EditText android:id="@+id/receiverPortEdit" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="4242" android:hint="Porta UDP" android:textColor="#FFFFFF"
+                android:textColorHint="#777777" android:inputType="number" android:singleLine="true"/>
+            <Button android:id="@+id/receiverStartButton" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                android:text="INICIAR RECEPTOR"/>
+        </LinearLayout>
+        <TextView android:id="@+id/receiverPacketText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="22dp"
+            android:text="ÚLTIMO PACOTE\nNenhum pacote recebido ainda."
+            android:textColor="#FFFFFF" android:textSize="18sp" android:fontFamily="monospace"/>
+        <TextView android:id="@+id/receiverLogText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="22dp"
+            android:text="LOG DE PACOTES" android:textColor="#8BC34A"
+            android:textSize="13sp" android:fontFamily="monospace"/>
+    </LinearLayout>
+</ScrollView>
