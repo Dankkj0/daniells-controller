@@ -1,1 +1,0 @@
-ADB TV screen is implemented in activity_adb_tv.xml.
