@@ -23,6 +23,8 @@
             android:layout_marginTop="4dp" android:text="Nenhuma TV selecionada" android:textColor="#8BC34A" android:textSize="12sp"/>
         <Button android:id="@+id/udpButton" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="6dp" android:text="ENVIAR CONTROLE"/>
+        <Button android:id="@+id/hidTestButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="TESTAR GAMEPAD BLUETOOTH HID"/>
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="14dp" android:text="DIAGNÓSTICO DO CONTROLE"
