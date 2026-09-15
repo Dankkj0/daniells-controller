@@ -22,10 +22,25 @@ class UdpSender {
 
         thread = Thread {
             var sequence = 0
+            var previousState: ByteArray? = null
             try {
                 while (running) {
-                    val payload = stateProvider(sequence++)
-                    s.send(DatagramPacket(payload, payload.size, address, port))
+                    val payload = stateProvider(sequence)
+
+                    // The sequence identifies controller-state changes, not the
+                    // 120 Hz transport heartbeat. This keeps it stable while
+                    // the controller is idle or a button is being held.
+                    val stateStart = 18 // after magic/version/reserved/seq/timestamp
+                    val state = payload.copyOfRange(stateStart, payload.size)
+                    if (previousState == null || !state.contentEquals(previousState)) {
+                        sequence++
+                        val updated = rebuildSequence(payload, sequence)
+                        previousState = state
+                        s.send(DatagramPacket(updated, updated.size, address, port))
+                    } else {
+                        // Keep the current state alive without advancing SEQ.
+                        s.send(DatagramPacket(payload, payload.size, address, port))
+                    }
                     Thread.sleep(8L) // ~120 Hz
                 }
             } catch (_: InterruptedException) {
@@ -38,6 +53,12 @@ class UdpSender {
             }
         }.apply { name = "controller-udp-sender" }
         thread!!.start()
+    }
+
+    private fun rebuildSequence(payload: ByteArray, sequence: Int): ByteArray {
+        val copy = payload.copyOf()
+        ByteBuffer.wrap(copy, 6, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(sequence)
+        return copy
     }
 
     fun stop() {
